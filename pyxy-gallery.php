@@ -1,5 +1,5 @@
-<? /*
-pyxy-gallery version 1.10
+<?php /*
+pyxy-gallery version 1.11
 http://fennecfoxen.org/pyxy/gallery
 See:
  http://fennecfoxen.org/pyxy/gallery/docs
@@ -32,15 +32,16 @@ global $pref;
 ?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
-	<title><? echo($pref['title']); ?></title>
-	<script type="text/javascript" src="<? echo($pref['prototype_path']); ?>"></script>
-	<? if($pref['lightbox_path']) { ?>
-	<script type="text/javascript" src="<? echo($pref['lightbox_path'] . "lightbox.js"); ?>"></script>
-	<link rel='stylesheet' href="<? echo($pref['lightbox_path'] . "lightbox.css"); ?>"/>
-	<? } ?>
+	<title><?php echo($pref['title']); ?></title>
+	<link rel="stylesheet" href="<?php echo($pref['uri']); ?>?act=css" />
+	<script type="text/javascript" src="<?php echo($pref['prototype_path']); ?>"></script>
+	<?php if($pref['lightbox_path']) { ?>
+	<script type="text/javascript" src="<?php echo($pref['lightbox_path'] . "lightbox.js"); ?>"></script>
+	<link rel='stylesheet' href="<?php echo($pref['lightbox_path'] . "lightbox.css"); ?>"/>
+	<?php } ?>
 	<script type="text/javascript"><!--
 		/* auto-loaded preference stuff */
-		<? $jspref = Array(	'uri', 'dir',
+		<?php $jspref = Array(	'uri', 'dir',
 							'maxH','maxW',
 						  	'max_per_page', 'pics_per_row',
 							'show_pic', 'show_url', 'show_date', 'show_size','show_res',
@@ -105,8 +106,10 @@ global $pref;
 					var d = new Date();
 						d.setTime(pic.mtime * 1000);
 					var da = d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear();
-					htm += '<td class="thumb"><a href="' + dir + pic.url +  (lightbox_path ? '" onclick="showLightbox(this); return false;' : '') +
-							'">';
+					pic.da = da;
+					htm += '<td class="thumb"><a href="' + dir + pic.url + 
+							(lightbox_path ? '" onclick="showLightbox(this); return false;' : '') +
+							'" title="' + getTitle(pic) +  '">';
 					if(show_pic) htm += getThumb(pic);
 					if(show_url) htm += '<br/>' +  pic.url;
 					htm += '<\/a>';
@@ -129,7 +132,11 @@ global $pref;
 					' width="' + pic.twidth + '" height="' + pic.theight + '" ' + 
 					' title="' + pic.url + '" alt="' + pic.url + '"/>';
 		}
-
+		function getTitle(pic){
+			return "Image: " + pic.url + " " +
+				(pic.da ? "(" + pic.da  + ") " : "") + 
+				"[" + pic.width + 'x' + pic.height + ", " + getsize(pic.filesize) + ']';
+		}
 		function getsize(size){			
 			if(size < 1000)
 				return size + " bytes";
@@ -220,81 +227,38 @@ global $pref;
 				num.hid = c;
 				num.onclick = autofrag;
 				el.appendChild(num);
+				el.appendChild(document.createElement('wbr')); // for spacing for linebreaks
 			}
 		}
 	// -->
 	</script>
-	<style type="text/css">
-		body { background: #333; color: #aaa;}
-		h1 {
-			text-align: center;
-			color: white;
-			}
-		div.navNP, div.nav123,
-		div#gallery {
-			border: thin black solid;
-			/* width: 776px; */
-			margin-left: auto;
-			margin-right: auto;
-			text-align: center;
-			color: white;
-		}
-		div#gallery table {
-			text-align: center;
-			width: 776px;
-			margin-left: auto;
-			margin-right: auto;
-			}
-		div.navNP a, div.nav123 a {
-			padding-right: 6pt;
-			padding-left: 6pt;
-		}
-		.thumb {
-			/* width: 190px; height: 190px; */
-			border: 1px solid black;
-			padding: 1px;
-			background: #555;
-			font-size: small;
-			color: black;
-			vertical-align: bottom;
-			}
-		div.thumb { float: left; }
-		a {
-			text-decoration: none;
-			color: #88c;
-		}
-		a:hover { color: #ccf; }
-		a strong { color: white; }
-		
-		a img { border: thin black solid; }
-	</style>
 </head>
-<body onload="startGallery(); if(lightbox_path) initLightbox();" onfocus="autofrag();"><div id="all">
+<body onload="startGallery(); if(lightbox_path) initLightbox();"><div id="all">
 <div id="head">
-  <h1><? echo($pref['pagetitle']); ?></h1>
+  <h1><?php echo($pref['pagetitle']); ?></h1>
+  <?php if($pref['caption']){  echo('<div id="caption">' . $pref['caption'] . '</div>');  	} ?>
 </div>
 <div id="main">
     <div class="navNP"><!-- the JavaScript above will populate this--></div>
 	<div id="gallery">loading...
-	   <noscript><? doNoScript(); ?></noscript></div>
+	   <noscript><?php doNoScript(); ?></noscript></div>
 	<div class="nav123"></div>
 </div>
-<div id="foot">
-	<a href="http://fennecfoxen.org/pyxy/gallery">Pyxy Gallery v1.10</a>
-	by
-	<a href="http://fennecfoxen.org">Thomas Whaples</a>.
-	<? if($pref['lightbox_path']) { ?><br/>with <a href="http://www.huddletogether.com/projects/lightbox/">lightbox.js</a> 
-	by Lokesh Dhakar.<? } ?>
-
-</div>
-</div>
-<? 
-if(file_exists("gallery_footer.inc")){ include("gallery_footer.inc"); }
-?>
-</body>
+<div id="foot"><?php
+if(file_exists("pyxy.footer.inc")){ include("pyxy.footer.inc"); }
+?><div id="credits">
+   <a href="http://fennecfoxen.org/pyxy/gallery">Pyxy Gallery v1.11</a>
+   by
+  <a href="http://fennecfoxen.org">Thomas Whaples</a>.
+  <?php if($pref['lightbox_path']) { ?><br/>with <a href="http://www.huddletogether.com/projects/lightbox/">lightbox.js</a>
+   by Lokesh Dhakar.<?php } ?>
+   </div>
+  </div>
+ </div>
+ </body>
 </html>
 
-<? } # end function doMain();
+<?php } # end function doMain();
 
 
 # A little boring stuff, then prefrences.
@@ -304,7 +268,7 @@ $titlec[0] = strtoupper($titlec[0]);
 
 # default preference section
 # you probably don't want to edit these
-# you're better off editing a file pref.inc
+# you're better off editing a file pyxy.pref.inc
 
 $pref = Array();
 $pref['debug'] = 0;
@@ -312,7 +276,7 @@ $pref['debug'] = 0;
 
 $pref['dir'] = './'; # I'm afraid I must insist on a relative URL
 
-$pref['uri'] = $_SERVER['PHP_SELF'];
+$pref['uri'] = "./";
 $pref['filetypes'] = Array('jpg','jpeg','gif','png');
 
 $pref['tmpdir'] = '/tmp/'; # a / at the end please
@@ -320,6 +284,8 @@ $pref['tmpdir'] = '/tmp/'; # a / at the end please
 
 $pref['title'] = "Gallery: $titlec";
 $pref['pagetitle'] = "Gallery: $titlec";
+$pref['caption']	  = "(this gallery has no description)";
+
 $pref['max_per_page'] = 8;
 $pref['pics_per_row'] = 4;
 $pref['show_pic']	  = 1; # hey, someone might not want thumbnails or URLs
@@ -327,7 +293,6 @@ $pref['show_url']     = 1; # but you really should have one or the other
 $pref['show_date']    = 1;
 $pref['show_size']    = 1;
 $pref['show_res']     = 1;
-
 
 $pref['autoinstall'] = 1;
 $pref['prototype_path'] =  "prototype.js"; # might want to turn off autoinstall if this is set
@@ -338,9 +303,9 @@ $pref['maxH'] = 128;
 $pref['maxW'] = 170;
 $pref['quality'] = 80;
 
-#override preferences in pref.inc
-if(file_exists("pref.inc")){
-	require("pref.inc");
+#override preferences in pyxy.pref.inc
+if(file_exists("pyxy.pref.inc")){
+	require("pyxy.pref.inc");
 	}
 	
 #boring stuff follows
@@ -348,7 +313,6 @@ function getTitle(){
 	$x = explode("/",$_SERVER['SCRIPT_FILENAME']);
 	$x = str_replace('_', ' ', $x);
 	return $x[sizeof($x) - 2];
-	return 'Gallery';
 }
 
 function jsPref($prefname){
@@ -366,7 +330,11 @@ $imgs = Array();
 
 # MAIN PAGE HANDLER
 
-if($pref['debug']){ header("Vary: *"); }
+if($pref['debug']){
+	# Debug mode keeps anything from being cached
+	header("Vary: *");
+	header("Cache-control: must-revalidate");
+}
 if(!isset($_REQUEST['act'])){
 	if($pref['autoinstall']){
 		if(!file_exists('prototype.js')){
@@ -378,9 +346,22 @@ if(!isset($_REQUEST['act'])){
 	$data = ob_get_contents();
 	$dataLength = ob_get_length();
 	ob_end_clean();
+	header("Cache-control: public, max-age=86400");
 	header('Content-type: text/html; charset=utf-8');
 	header("Content-Length: ".$dataLength);
-	echo $data;	
+	echo $data;
+} elseif($_REQUEST['act'] == 'css'){
+	$lastmod = filemtime($_SERVER['SCRIPT_FILENAME']);
+	ifmodsince($lastmod);
+	ob_start();
+	doCSS();
+	$data = ob_get_contents();
+	$dataLength = ob_get_length();
+	ob_end_clean();
+	header("Cache-control: public");
+	header("Content-Length: ".$dataLength);
+	echo $data;
+
 } elseif($_REQUEST['act'] == 'json'){
 	chdir($pref['dir']);
 	$lastmod = load_dir();
@@ -488,8 +469,8 @@ function ifmodsince($lastmod){
 	if ($lastmod) {
 		$mself = filemtime($_SERVER['SCRIPT_FILENAME']) ;
 		if($mself > $lastmod) $lastmod = $mself;
-		if(file_exists('pref.inc')){
-			$mpref = filemtime('pref.inc');
+		if(file_exists('pyxy.pref.inc')){
+			$mpref = filemtime('pyxy.pref.inc');
 			if($mpref > $lastmod) $lastmod = $mpref;
 		}
 		$cond = isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])? $_SERVER['HTTP_IF_MODIFIED_SINCE'] : 0;
@@ -566,21 +547,25 @@ function scaledim($dim){
 }
 
 function doNoScript(){ global $pref; ?>
-	<p>Sorry, this gallery requires JavaScript. However, you may view this image listing:</p>
-	<p><a rel="alternate" href="<? echo($pref['uri']); ?>?act=noscript">View directory</a></p>
-	<?
+	<p>Image gallery by Pyxy-Gallery.</p>
+	<p>This gallery requires JavaScript. However, you may view this image listing:</p>
+	<p><a rel="alternate" href="<?php echo($pref['uri']); ?>?act=noscript">View directory</a></p>
+	<?php
 	
 	?>
 	
-<?
+<?php
 }
 
 function get_imgs_noscript(){
 	global $imgs;
 	global $pref;
-	$res =  "<html><head><title> " . $pref['title'] . "</title></head><body>";
-	$res .= "<h1>Directory for <a href=\"" . $pref['uri'] . "\"> " . 
-		$pref['title'] . "</a></h1>";
+	$res = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">';
+	$res .=  "\n<html><head><title> " . $pref['title'] . "</title>";
+	$res .= "\n<link rel='stylesheet' href='" . $pref['uri'] . "?act=css'/></head><body>";
+	$res .= "<h1>Directory for <a href=\"" . $pref['uri'] . "\"> " . $pref['title'] . "</a></h1>";
+    if($pref['caption']){  $res .= '<div id="caption">' . $pref['caption'] . '</div>'; }
+  
 	$res .= "<ul>";
 	foreach($imgs as $i=>$d){
 		$ih = $pref['dir'] . $i;
@@ -591,9 +576,18 @@ function get_imgs_noscript(){
 }
 
 function autoinstall(){
-	$pjs = fopen("prototype.js","x");
-	$pjsurl = "http://fennecfoxen.org/misc/prototype.js";
+	#$pjsurl = "http://fennecfoxen.org/misc/prototype.js";
+	#  well- theoretically I could abuse that URL
+	#  best leave it with one on an official site.
 	$pjsurl = "http://prototype.conio.net/dist/prototype-1.4.0.js";
+	$docs = "http://fennecfoxen.org/pyxy/gallery/docs";
+
+	if(ini_get('allow_url_fopen'))
+		$pjs = fopen('prototype.js',"x");
+	else {
+		echo("<h2>allow_url_fopen disabled</h2>");
+		echo("<p>Cannot autoinstall prototype.js: allow_url_fopen is disabled on your system. Please <a href='$pjsurl'>download prototype.js</a> and install it manually. See the <a href='$docs'>Pyxy-Gallery documentation</a> for further details.</p>");
+	}
 	if($pjs){
 		$prototypejs = file_get_contents($pjsurl);
 		if($prototypejs){
@@ -602,10 +596,65 @@ function autoinstall(){
 		}
 		else {
 			echo("<h2>prototype.js not available</h2>");
-			echo("<p><b>Could not auto-install prototype.js</b> - please <a href='$pjsurl'>download it</a> and install manually.</b>");
+			echo("<p><b>Could not auto-install prototype.js</b> - could not download prototype.js over the network. Please <a href='$pjsurl'>download it</a> and install manually: see <a href='$docs'>the Pyxy-Gallery documentation</a> for details.</b>");
 			unlink("prototype.js");
 		}
+	} else { # fopen failed 
+		echo("<h2>prototype.js installation failed</h2>");
+		echo("<p><b>Count not auto-install prototype.hs</b> - could not open file for writing. Please install <a href='$pjsurl'>prototype.js</a> manually: see <a href='$docs'>the Pyxy-Gallery documentation</a> for details.</p>");
 	}
+}
+
+function doCSS(){ 
+header("Content-type: text/css");
+?>
+body { background: #333; color: #aaa;}
+h1 {
+	text-align: center;
+	color: white;
+	}
+div.navNP, div.nav123,
+div#gallery {
+	border: thin black solid;
+	/* width: 776px; */
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
+	color: white;
+}
+div#gallery table {
+	text-align: center;
+	width: 776px; /* perfect for default settings */
+	margin-left: auto;
+	margin-right: auto;
+	}
+div.navNP a, div.nav123 a {
+	padding-right: 6pt;
+	padding-left: 6pt;
+}
+.thumb {
+	/* width: 190px; height: 190px; */
+	border: 1px solid black;
+	padding: 1px;
+	background: #555;
+	font-size: small;
+	color: black;
+	vertical-align: bottom;
+	}
+div.thumb { float: left; }
+a {
+	text-decoration: none;
+	color: #88c;
+}
+a:hover { color: #ccf; }
+a strong { color: white; }	
+a img { border: thin black solid; }
+div#credits { text-align: center; }
+div#caption {
+	margin: 5px auto 5px auto;
+	width: 776px;
+}
+<?php
 }
 
 
