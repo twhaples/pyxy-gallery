@@ -1,7 +1,10 @@
 <? /*
-pyxy-gallery version 1.01
+pyxy-gallery version 1.10
 http://fennecfoxen.org/pyxy/gallery
-Copyright (C) 7 May 2006 Thomas Whaples <tom@eh.net>
+See:
+ http://fennecfoxen.org/pyxy/gallery/docs
+for installation instructions.
+Copyright (C) 2006 Thomas Whaples <tom@eh.net>
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -30,10 +33,14 @@ global $pref;
 <html>
 <head>
 	<title><? echo($pref['title']); ?></title>
-	<script language="JavaScript1.5" type="text/javascript" src="prototype.js"></script>
-	<script language="JavaScript1.5" type="text/javascript"><!--
+	<script type="text/javascript" src="<? echo($pref['prototype_path']); ?>"></script>
+	<? if($pref['lightbox_path']) { ?>
+	<script type="text/javascript" src="<? echo($pref['lightbox_path'] . "lightbox.js"); ?>"></script>
+	<link rel='stylesheet' href="<? echo($pref['lightbox_path'] . "lightbox.css"); ?>"/>
+	<? } ?>
+	<script type="text/javascript"><!--
 		/* auto-loaded preference stuff */
-		<? $jspref = Array(	'uri',
+		<? $jspref = Array(	'uri', 'dir',
 							'maxH','maxW',
 						  	'max_per_page', 'pics_per_row',
 							'show_pic', 'show_url', 'show_date', 'show_size','show_res',
@@ -46,19 +53,18 @@ global $pref;
 		var start = -1;
 		var end = -1;
 		var fragid = -1;
-		
+		var myAjax;
 		var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 		
 		function startGallery(){
 			g = $("gallery");
-			var myAjax = new Ajax.Request(uri, {method: 'get', parameters: "act=json", onComplete: loadGallery });
+			myAjax = new Ajax.Request(uri, {method: 'get', parameters: "act=json", onComplete: loadGallery });
 		}
 		function loadGallery(res){
 			result = eval(res.responseText);
 			pictures = result.data;
 			if(pictures == undefined) pictures = result;
 			installNavigation();
-			//loadFragment();
 			autofrag();
 		}
 		function loadFragment(){
@@ -70,20 +76,23 @@ global $pref;
 			else
 				loadFrom(s[1]);
 		}
-		function refrag(){
-			autofrag();
-			//window.setTimeout(loadFragment, 10);
-			}
 		function autofrag(){
 			window.clearTimeout(fragid);
-			fragid = window.setTimeout(autofrag, 50);
+			if(pictures && pictures.length){
+				fragid = window.setTimeout(autofrag, 50);
+				}
 			loadFragment();
-			}
+		}
 		
 		function loadFrom(frag){
 			frag = parseInt(frag);
 			if(frag == Math.NaN) frag = 0;
 			if(frag == start) return;
+			if(!pictures) return;
+			if(pictures.length == 0){
+				g.innerHTML = "<br/><br/>There are no pictures in this directory.<br/><br/><br/>";
+				return;		
+			}
 			var max = pictures.length;
 			var c = 0;
 			start =  frag;
@@ -96,7 +105,7 @@ global $pref;
 					var d = new Date();
 						d.setTime(pic.mtime * 1000);
 					var da = d.getDate() + " " + months[d.getMonth()] + " " + d.getFullYear();
-					htm += '<td class="thumb"><a href="' + pic.url +  // 'onclick="showLightbox(this); return false;' +
+					htm += '<td class="thumb"><a href="' + dir + pic.url +  (lightbox_path ? '" onclick="showLightbox(this); return false;' : '') +
 							'">';
 					if(show_pic) htm += getThumb(pic);
 					if(show_url) htm += '<br/>' +  pic.url;
@@ -117,7 +126,8 @@ global $pref;
 		}
 		function getThumb(pic){
 			return '<img src="' + uri + '?act=resize&amp;pic=' + pic.url + '" ' +
-					' width="' + pic.twidth + '" height="' + pic.theight + '"/>';
+					' width="' + pic.twidth + '" height="' + pic.theight + '" ' + 
+					' title="' + pic.url + '" alt="' + pic.url + '"/>';
 		}
 
 		function getsize(size){			
@@ -142,17 +152,17 @@ global $pref;
 			prev = document.createElement('a');
 			prev.className = "navPrev";
 			prev.innerHTML = "prev";
-			prev.onclick = refrag;
+			prev.onclick = autofrag;
 	
 			next = document.createElement('a');
 			next.className = "navNext";
 			next.innerHTML = "next";
-			next.onclick = refrag;
+			next.onclick = autofrag;
 
 			last = document.createElement('a');
 			last.className = "navLast";
 			last.innerHTML = "last";
-			last.onclick = refrag;
+			last.onclick = autofrag;
 			lasti = (pictures.length - (pictures.length %  max_per_page));
 			if(lasti == pictures.length) lasti -= max_per_page;
 			last.href = "#" + lasti;
@@ -161,7 +171,7 @@ global $pref;
 			first = document.createElement('a');
 			first.className = "navFirst";
 			first.innerHTML = "first";
-			first.onclick = refrag;
+			first.onclick = autofrag;
 			first.href = "#";
 			
 			el.innerHTML = "";
@@ -208,7 +218,7 @@ global $pref;
 				num.innerHTML = num.saveHTML =  '['+(n++)+']';
 				num.href = "#" + c;
 				num.hid = c;
-				num.onclick = refrag;
+				num.onclick = autofrag;
 				el.appendChild(num);
 			}
 		}
@@ -259,7 +269,7 @@ global $pref;
 		a img { border: thin black solid; }
 	</style>
 </head>
-<body onload="startGallery();" onfocus="autofrag();"><div id="all">
+<body onload="startGallery(); if(lightbox_path) initLightbox();" onfocus="autofrag();"><div id="all">
 <div id="head">
   <h1><? echo($pref['pagetitle']); ?></h1>
 </div>
@@ -270,8 +280,12 @@ global $pref;
 	<div class="nav123"></div>
 </div>
 <div id="foot">
-	<a href="http://fennecfoxen.org/pyxy/gallery">Pyxy Gallery v1.01</a> by
+	<a href="http://fennecfoxen.org/pyxy/gallery">Pyxy Gallery v1.10</a>
+	by
 	<a href="http://fennecfoxen.org">Thomas Whaples</a>.
+	<? if($pref['lightbox_path']) { ?><br/>with <a href="http://www.huddletogether.com/projects/lightbox/">lightbox.js</a> 
+	by Lokesh Dhakar.<? } ?>
+
 </div>
 </div>
 <? 
@@ -293,6 +307,11 @@ $titlec[0] = strtoupper($titlec[0]);
 # you're better off editing a file pref.inc
 
 $pref = Array();
+$pref['debug'] = 0;
+
+
+$pref['dir'] = './'; # I'm afraid I must insist on a relative URL
+
 $pref['uri'] = $_SERVER['PHP_SELF'];
 $pref['filetypes'] = Array('jpg','jpeg','gif','png');
 
@@ -303,13 +322,15 @@ $pref['title'] = "Gallery: $titlec";
 $pref['pagetitle'] = "Gallery: $titlec";
 $pref['max_per_page'] = 8;
 $pref['pics_per_row'] = 4;
-$pref['show_pic']	  = 1; # hey, someone might not want thumbnails
+$pref['show_pic']	  = 1; # hey, someone might not want thumbnails or URLs
 $pref['show_url']     = 1; # but you really should have one or the other
 $pref['show_date']    = 1;
 $pref['show_size']    = 1;
 $pref['show_res']     = 1;
 
+
 $pref['autoinstall'] = 1;
+$pref['prototype_path'] =  "prototype.js"; # might want to turn off autoinstall if this is set
 $pref['lightbox_path'] = ""; # lightbox.js location: relative URL
 							 # This doesn't work yet.
 
@@ -319,8 +340,9 @@ $pref['quality'] = 80;
 
 #override preferences in pref.inc
 if(file_exists("pref.inc")){
-	include("pref.inc");
+	require("pref.inc");
 	}
+	
 #boring stuff follows
 function getTitle(){	
 	$x = explode("/",$_SERVER['SCRIPT_FILENAME']);
@@ -344,6 +366,7 @@ $imgs = Array();
 
 # MAIN PAGE HANDLER
 
+if($pref['debug']){ header("Vary: *"); }
 if(!isset($_REQUEST['act'])){
 	if($pref['autoinstall']){
 		if(!file_exists('prototype.js')){
@@ -359,6 +382,7 @@ if(!isset($_REQUEST['act'])){
 	header("Content-Length: ".$dataLength);
 	echo $data;	
 } elseif($_REQUEST['act'] == 'json'){
+	chdir($pref['dir']);
 	$lastmod = load_dir();
 	ifmodsince($lastmod);
 	$res = get_imgs_json();
@@ -367,6 +391,7 @@ if(!isset($_REQUEST['act'])){
 	echo($res);
 	exit;
 } elseif($_REQUEST['act'] == 'resize'){
+    chdir($pref['dir']);
 	if(isset($_REQUEST['pic'])){
 		$pic = $_REQUEST['pic'];
 		ifmodsince(filemtime($pic));
@@ -384,6 +409,7 @@ if(!isset($_REQUEST['act'])){
 		ImageDestroy($im);
 	}
 } elseif($_REQUEST['act'] == 'noscript'){
+    chdir($pref['dir']);
 	$lastmod = load_dir();
 	ifmodsince($lastmod);
 	$res = get_imgs_noscript();
@@ -409,10 +435,8 @@ function load_dir(){
 	$lastmod = 0;
 	$dh = opendir('.');
 	while (($file = readdir($dh)) !== false) {
-	    $ft = filetype($file);
-	
-		if($ft == 'dir'){ $dirs[] = $file; }
-		elseif($ft == 'file'){
+		if(is_dir($file)){ $dirs[] = $file; }
+		elseif(is_readable($file)){
 			$ext = getValidExtension($file);
 			if($ext){
 				$when = filemtime($file);
@@ -462,6 +486,12 @@ function get_imgs_json(){
 
 function ifmodsince($lastmod){
 	if ($lastmod) {
+		$mself = filemtime($_SERVER['SCRIPT_FILENAME']) ;
+		if($mself > $lastmod) $lastmod = $mself;
+		if(file_exists('pref.inc')){
+			$mpref = filemtime('pref.inc');
+			if($mpref > $lastmod) $lastmod = $mpref;
+		}
 		$cond = isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])? $_SERVER['HTTP_IF_MODIFIED_SINCE'] : 0;
 		if ($cond and $_SERVER['REQUEST_METHOD'] == 'GET' and strtotime($cond) >= $lastmod) {
 			header('HTTP/1.0 304 Not Modified');
@@ -553,7 +583,8 @@ function get_imgs_noscript(){
 		$pref['title'] . "</a></h1>";
 	$res .= "<ul>";
 	foreach($imgs as $i=>$d){
-		$res .= "<li><a href=\"$i\">$i</a></li>";
+		$ih = $pref['dir'] . $i;
+		$res .= "<li><a href=\"$ih\">$i</a></li>";
 		}
 	$res .= "</ul></head></html>";
 	return $res;
