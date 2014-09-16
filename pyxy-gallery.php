@@ -1,5 +1,5 @@
 <? /*
-pyxy-gallery version 1.00
+pyxy-gallery version 1.01
 http://fennecfoxen.org/pyxy/gallery
 Copyright (C) 7 May 2006 Thomas Whaples <tom@eh.net>
 
@@ -30,8 +30,8 @@ global $pref;
 <html>
 <head>
 	<title><? echo($pref['title']); ?></title>
-	<script type="text/javascript" src="prototype.js"></script>
-	<script type="text/javascript"><!--
+	<script language="JavaScript1.5" type="text/javascript" src="prototype.js"></script>
+	<script language="JavaScript1.5" type="text/javascript"><!--
 		/* auto-loaded preference stuff */
 		<? $jspref = Array(	'uri',
 							'maxH','maxW',
@@ -45,6 +45,7 @@ global $pref;
 		var g;
 		var start = -1;
 		var end = -1;
+		var fragid = -1;
 		
 		var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 		
@@ -70,10 +71,12 @@ global $pref;
 				loadFrom(s[1]);
 		}
 		function refrag(){
+			autofrag();
 			//window.setTimeout(loadFragment, 10);
 			}
 		function autofrag(){
-			window.setTimeout(autofrag, 50);
+			window.clearTimeout(fragid);
+			fragid = window.setTimeout(autofrag, 50);
 			loadFragment();
 			}
 		
@@ -256,7 +259,7 @@ global $pref;
 		a img { border: thin black solid; }
 	</style>
 </head>
-<body onload="startGallery();"><div id="all">
+<body onload="startGallery();" onfocus="autofrag();"><div id="all">
 <div id="head">
   <h1><? echo($pref['pagetitle']); ?></h1>
 </div>
@@ -267,10 +270,14 @@ global $pref;
 	<div class="nav123"></div>
 </div>
 <div id="foot">
-	<a href="http://fennecfoxen.org/pyxy/gallery">Pyxy Gallery</a> by
+	<a href="http://fennecfoxen.org/pyxy/gallery">Pyxy Gallery v1.01</a> by
 	<a href="http://fennecfoxen.org">Thomas Whaples</a>.
 </div>
-</div></body>
+</div>
+<? 
+if(file_exists("gallery_footer.inc")){ include("gallery_footer.inc"); }
+?>
+</body>
 </html>
 
 <? } # end function doMain();
@@ -542,7 +549,8 @@ function get_imgs_noscript(){
 	global $imgs;
 	global $pref;
 	$res =  "<html><head><title> " . $pref['title'] . "</title></head><body>";
-	$res .= "<h1>Directory for " . $pref['title'] . "</h1>";
+	$res .= "<h1>Directory for <a href=\"" . $pref['uri'] . "\"> " . 
+		$pref['title'] . "</a></h1>";
 	$res .= "<ul>";
 	foreach($imgs as $i=>$d){
 		$res .= "<li><a href=\"$i\">$i</a></li>";
@@ -554,6 +562,7 @@ function get_imgs_noscript(){
 function autoinstall(){
 	$pjs = fopen("prototype.js","x");
 	$pjsurl = "http://fennecfoxen.org/misc/prototype.js";
+	$pjsurl = "http://prototype.conio.net/dist/prototype-1.4.0.js";
 	if($pjs){
 		$prototypejs = file_get_contents($pjsurl);
 		if($prototypejs){
